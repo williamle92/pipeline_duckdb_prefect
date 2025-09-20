@@ -1,18 +1,15 @@
-from logging.config import fileConfig
-import os
 import sys
+from logging.config import fileConfig
 from pathlib import Path
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
-
-# Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+from sqlalchemy import pool
 
 from pipeline.configs import Configurations as app_config
 from pipeline.db import Base
+
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -67,15 +64,14 @@ def run_migrations_online() -> None:
     """
     # Use dynamic URL from configuration
     from sqlalchemy import create_engine
+
     connectable = create_engine(
         app_config.database.generate_db_url(use_async=False),
         poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

@@ -1,15 +1,16 @@
+import functools
 import os
-from typing import Optional
+
 import msgspec
 from dotenv import load_dotenv
-import functools
 
 load_dotenv()
+
 
 class DatabaseConfig(msgspec.Struct):
     """Database configuration using msgspec"""
 
-    name: str 
+    name: str
     username: str
     password: str
     host: str = "localhost"
@@ -51,5 +52,6 @@ class Configuration(msgspec.Struct):
 @functools.cache
 def get_configs() -> Configuration:
     return Configuration.from_env()
+
 
 Configurations: Configuration = get_configs()

@@ -1,12 +1,12 @@
 from datetime import datetime
 from typing import Optional
 from uuid import uuid4
-from sqlalchemy import  DateTime, Text, ForeignKey, func
-from sqlalchemy.orm import Mapped, mapped_column
+
+from sqlalchemy import DateTime, ForeignKey, Text, func
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
 
 from ..db import Base
-
 
 
 class Article(Base):
