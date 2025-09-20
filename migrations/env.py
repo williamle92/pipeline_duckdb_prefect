@@ -11,7 +11,7 @@ from alembic import context
 # Add the src directory to the Python path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from pipeline.configs import config as app_config
+from pipeline.configs import Configurations as app_config
 from pipeline.db import Base
 
 # this is the Alembic Config object, which provides
@@ -46,7 +46,7 @@ def run_migrations_offline() -> None:
 
     """
     # Use dynamic URL from configuration
-    url = app_config.database.get_sync_url()
+    url = app_config.database.generate_db_url(use_async=False)
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -68,7 +68,7 @@ def run_migrations_online() -> None:
     # Use dynamic URL from configuration
     from sqlalchemy import create_engine
     connectable = create_engine(
-        app_config.database.get_sync_url(),
+        app_config.database.generate_db_url(use_async=False),
         poolclass=pool.NullPool,
     )
 
