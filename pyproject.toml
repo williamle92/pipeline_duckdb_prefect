@@ -10,4 +10,5 @@ dependencies = [
     "prefect>=3.4.19",
     "sqlalchemy>=2.0.43",
     "asyncpg>=0.29.0",
+    "alembic>=1.16.5",
 ]
