@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Text, func
+from sqlalchemy import DateTime, ForeignKey, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -13,7 +13,10 @@ class Article(Base):
     __tablename__ = "articles"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+        server_default=text("uuid_generate_v4()"),
     )
     url: Mapped[str] = mapped_column(Text)
     title: Mapped[str] = mapped_column(Text, nullable=False)

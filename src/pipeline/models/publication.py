@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import DateTime, String, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,7 +16,10 @@ class Publication(Base):
     __tablename__ = "publications"
 
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid4
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+        server_default=text("uuid_generate_v4()"),
     )
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     created_on: Mapped[datetime] = mapped_column(
