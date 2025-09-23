@@ -55,7 +55,7 @@ def upgrade() -> None:
         sa.Column("title", sa.Text(), nullable=False),
         sa.Column("subtitle", sa.Text(), nullable=True),
         sa.Column("publication_id", sa.UUID(), nullable=False),
-        sa.Column("date_published", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("date_published", sa.Date(), nullable=True),
         sa.Column(
             "created_on",
             sa.DateTime(timezone=True),
