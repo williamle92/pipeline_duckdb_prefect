@@ -38,7 +38,7 @@ def run_migrations_offline() -> None:
 
     """
     # Use dynamic URL from configuration
-    url = app_config.database.generate_db_url(use_async=False)
+    url = app_config.database.generate_db_url(dialect="postgesql+psycopg2")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -61,7 +61,7 @@ def run_migrations_online() -> None:
     from sqlalchemy import create_engine
 
     connectable = create_engine(
-        app_config.database.generate_db_url(use_async=False),
+        app_config.database.generate_db_url(dialect="postgesql+psycopg2"),
         poolclass=pool.NullPool,
     )
 

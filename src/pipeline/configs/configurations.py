@@ -27,10 +27,10 @@ class DatabaseConfig(msgspec.Struct):
             port=int(os.getenv("DB_PORT", "5432")),
         )
 
-    def generate_db_url(self, use_async: bool = True) -> str:
+    def generate_db_url(self, dialect: str = "postgresql") -> str:
         """Get asynchronous database URL for asyncpg"""
-        dbapi: str = "asyncpg" if use_async else "psycopg2"
-        return f"postgresql+{dbapi}://{self.username}:{self.password}@{self.host}:{self.port}/{self.name}"
+
+        return f"{dialect}://{self.username}:{self.password}@{self.host}:{self.port}/{self.name}"
 
 
 class Configuration(msgspec.Struct):

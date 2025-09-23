@@ -20,7 +20,7 @@ class Base(DeclarativeBase):
 
 # Create async engine using configuration
 async_engine: AsyncEngine = create_async_engine(
-    Configurations.database.generate_db_url(), echo=True
+    Configurations.database.generate_db_url(dialect="postgresql+asyncpg"), echo=True
 )
 
 # Create async session factory
