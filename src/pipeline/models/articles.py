@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Text, func, text
+from sqlalchemy import Date, DateTime, ForeignKey, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,9 +24,7 @@ class Article(Base):
     publication_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("publications.id"), nullable=False
     )
-    date_published: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    date_published: Mapped[Optional[datetime]] = mapped_column(Date, nullable=True)
     created_on: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
