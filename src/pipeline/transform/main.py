@@ -3,14 +3,12 @@ from datetime import datetime
 from pathlib import Path
 
 import duckdb
+from polars import DataFrame
 from sqlalchemy.dialects.postgresql import insert
 
 from src.pipeline.db import AsyncSessionLocal
+from src.pipeline.models.articles import Article
 from src.pipeline.models.publication import Publication
-from src.pipeline.transform.validator.publications import (
-    PublicationIn,
-    validate_publications,
-)
 
 CHUNK_SIZE = 100
 
@@ -62,21 +60,95 @@ async def import_publications_to_postgres(connection: duckdb.DuckDBPyConnection)
     if connection is None:
         raise ValueError("The DuckDB connection is not established.")
 
-    publications = connection.execute("SELECT name FROM publications").fetchall()
-    values: list[PublicationIn] = validate_publications(data=publications)
+    publications: DataFrame = connection.sql("SELECT name FROM publications").pl()
+    values: list[dict] = publications.to_dicts()
 
+    publication_mapping: dict = {}
     async with AsyncSessionLocal() as session:
         for i in range(0, len(values), CHUNK_SIZE):
             chunk: list[str] = values[i : i + CHUNK_SIZE]
-            insert_pub = insert(Publication).values(chunk)
+            # Create insert statement with RETURNING clause
+            insert_stmt = insert(Publication).values(chunk)
+            upsert_stmt = insert_stmt.on_conflict_do_update(
+                index_elements=["name"],
+                set_={"updated_on": datetime.utcnow()},
+            ).returning(Publication.name, Publication.id)
 
             async with session.begin():
-                do_update_stmt = insert_pub.on_conflict_do_update(
-                    index_elements=["name"],
-                    set_={"updated_on": datetime.utcnow()},
-                )
-                await session.execute(do_update_stmt)
-                await session.commit()
+                result = await session.execute(upsert_stmt)
+                # Fetch all returned rows and build the mapping
+                returned_rows = result.fetchall()
+                for row in returned_rows:
+                    publication_mapping[row.name] = row.id
+
+        await session.commit()
+
+    return publication_mapping
+
+
+async def import_articles_to_postgres(
+    connection: duckdb.DuckDBPyConnection, publication_mapping
+):
+    if connection is None:
+        raise ValueError("The DuckDB connection is not established.")
+
+    if not publication_mapping:
+        raise ValueError("Publication mapping is empty. Insert publications first.")
+
+    # Query articles with publication names from DuckDB
+    articles_df: DataFrame = connection.sql(
+        """
+        SELECT
+            url,
+            title,
+            subtitle,
+            publication as publication_name,
+            date as date_published
+        FROM articles
+    """
+    ).pl()
+
+    articles_data = articles_df.to_dicts()
+    print(f"Processing {len(articles_data)} articles")
+
+    # Transform data and resolve foreign keys
+    articles_for_insert = []
+    missing_publications = set()
+
+    for article_data in articles_data:
+        publication_name = article_data["publication_name"]
+
+        # Check if publication exists in mapping
+        if publication_name not in publication_mapping:
+            missing_publications.add(publication_name)
+            continue
+
+        # Create article dict with resolved foreign key
+        article_dict = {
+            "url": article_data["url"],
+            "title": article_data["title"],
+            "subtitle": article_data.get("subtitle"),
+            "publication_id": publication_mapping[publication_name],
+            "date_published": article_data.get("date_published"),
+        }
+        articles_for_insert.append(article_dict)
+
+    if missing_publications:
+        print(f"missing publications have been found: {missing_publications}")
+
+    # Bulk insert articles in chunks
+    total_inserted = 0
+    async with AsyncSessionLocal() as session:
+        for i in range(0, len(articles_for_insert), CHUNK_SIZE):
+            chunk = articles_for_insert[i : i + CHUNK_SIZE]
+
+            async with session.begin():
+                insert_stmt = insert(Article).values(chunk)
+                result = await session.execute(insert_stmt)
+                total_inserted += result.rowcount
+
+    print(f"Successfully inserted {total_inserted} articles")
+    return total_inserted
 
 
 if __name__ == "__main__":
@@ -84,4 +156,10 @@ if __name__ == "__main__":
         file_path="/Users/williamle/Downloads/medium_data.csv"
     )
     conn = create_publications_table(conn)
-    conn = asyncio.run(import_publications_to_postgres(conn))
+    loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+
+    publication_id_map: dict = loop.run_until_complete(
+        import_publications_to_postgres(conn)
+    )
+
+    loop.run_until_complete(import_articles_to_postgres(conn, publication_id_map))
