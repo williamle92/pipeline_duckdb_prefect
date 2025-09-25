@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from logging import Logger
 from pathlib import Path
@@ -191,4 +192,6 @@ async def orchestrate_pipeline(file_path: str):
 
 
 if __name__ == "__main__":
-    orchestrate_pipeline(file_path="/Users/williamle/Downloads/medium_data.csv")
+    asyncio.run(
+        orchestrate_pipeline(file_path="/Users/williamle/Downloads/medium_data.csv")
+    )
