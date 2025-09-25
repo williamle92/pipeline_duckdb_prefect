@@ -181,13 +181,14 @@ async def orchestrate_pipeline(file_path: str):
         file_path=file_path
     )
     wait([ddb_connection, create_publications_table.submit(ddb_connection)])
-    conn = ddb_connection.result()
+    conn: duckdb.DuckDBPyConnection = ddb_connection.result()
     logger.info("Preparing to import publications into Postgres")
     publication_map: dict = await import_publications_to_postgres(conn)
     logger.info("Imported publications into Postgres")
     logger.info("Preparing to import articles into Postgres")
     await import_articles_to_postgres(conn, publication_map)
     logger.info("Pipeline orchestration flow completed.")
+    conn.close()
     return Completed()
 
 
